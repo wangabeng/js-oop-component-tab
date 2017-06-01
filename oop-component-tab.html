@@ -15,7 +15,7 @@
 }
 #div4 p{
 	width:200px;
-	height:50px;
+	height:150px;
 	background-color:gray;
 	color:white;
 }
@@ -174,7 +174,7 @@ Tab.prototype.getContent=function(){
 	getBtn.onclick=function(){
 		setInterval(function(){
 			//console.log(That.settings);//每隔200ms刷新一次当前的eachShowIndex值
-			showContent.innerHTML='当前被激活的索引值是'+That.settings.eachShowIndex;
+			showContent.innerHTML='当前被激活的索引值是'+That.settings.eachShowIndex+'<br>'+new Date();
 		},200);
 	}
 }
