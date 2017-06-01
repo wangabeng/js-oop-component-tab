@@ -1,0 +1,253 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Document</title>
+<style>
+.active{
+	background:red;
+}
+#div1 div,#div2 div,#div3 div,#div4 div{
+	width:200px; 
+	height:200px; 
+	border:1px #000 solid; 
+	display:none;
+}
+#div4 p{
+	width:200px;
+	height:50px;
+	background-color:gray;
+	color:white;
+}
+</style>
+</head>
+<script>
+window.onload=function(){
+/*开发说明
+配置参数： settings
+方法： methods 比如点击最后一个tab 的button 可以获取文字内容 这里添加一个原型方法即可
+自定义事件： events*/
+	var oDiv1=new Tab();	
+	oDiv1.init({
+		idname:'div1',
+		eachShowIndex:1//默认激活的index
+	});	
+	//不在这里绑定 
+	// bindEvent(oDiv1,'dddclick',function(obj){
+	// 	 ;
+	// });
+	
+
+
+	var oDiv2=new Tab();
+	oDiv2.init({
+		idname:'div2',
+		eachShowIndex:0,
+		events:'mouseover'
+	});
+
+	var oDiv3=new Tab();
+	oDiv3.init({
+		idname:'div3',
+		eachShowIndex:0,
+		events:'mouseover',
+		delay:200
+	});
+
+	// getContent
+
+	var oDiv4=new Tab();
+	oDiv4.init({
+		idname:'div4',
+		eachShowIndex:0,
+		events:'mouseover',
+		delay:200
+	});	
+	oDiv4.getContent();
+}
+
+function Tab(){
+	this.obj=null;
+	this.aBtn=null;
+	this.aDiv=null;
+	this.showIndex=0;
+	this.settings={
+		idname:'',
+		eachShowIndex:null,
+		events:'click',
+		delay:''
+	}
+}
+
+Tab.prototype.init=function(opt){
+	//更改默认参数
+	extending(this.settings,opt);
+	var that=this;
+	
+	this.obj=document.getElementById(this.settings.idname);
+	this.aBtn=this.obj.getElementsByTagName('input');
+	this.aDiv=this.obj.getElementsByTagName('div');
+
+	//初始化执行showDiv函数
+	this.showIndex=this.settings.eachShowIndex;
+	this.showDiv();
+
+	//发生事件 触发this.index的改变
+	for (var i = 0; i <this.aBtn.length; i++) {
+		this.aBtn[i].index=i;
+		/*有可能不是点击事件 默认是点击事件
+		this.aBtn[i].onclick=function(){
+			that.showIndex=this.index;
+
+			//自定义事件
+			fireEvent(that,'dddclick');
+
+			that.tabShowDiv();
+		}*/
+		//先绑定点击事件 然后触发
+		var timer=null;
+		bindEvent(this.aBtn[i],this.settings.events,function(){
+			 //自定义切换前主动触发事件
+			 bindEvent(that,'beforeTab',function(){
+			 	console.log('切换前的showIndex是'+that.showIndex);
+			 });
+			 //切换前主动触发该自定义事件
+			 fireEvent(that,'beforeTab');
+
+			 that.showIndex=this.index;
+			 that.settings.eachShowIndex=this.index;
+
+			 //console.log(this);//this指向当前的按钮
+			 //如果是鼠标移入 并且有延迟 添加鼠标移入事件
+			 if (that.settings.events=='mouseover'&&!!that.settings.delay) {
+				 timer=setTimeout(function(){
+				 	that.tabShowDiv();
+				 },that.settings.delay);	
+				 //同时添加鼠标移出事件
+				 that.aBtn[that.settings.eachShowIndex].onmouseout=function(){
+				 	//alert(that.settings.eachShowIndex);
+				 	clearTimeout(timer);
+				 }		 	
+			 }else{
+				that.tabShowDiv();
+			 }
+
+			 //自定义切换后主动触发事件
+			 bindEvent(that,'afterTab',function(){
+			 	console.log('切换后的showIndex是'+that.showIndex);
+			 });
+			 //切换前主动触发该自定义事件
+			 fireEvent(that,'afterTab');
+
+			 
+		});
+		//fireEvent(this.aBtn[i],this.settings.events);
+
+	}
+}
+
+Tab.prototype.showDiv=function(){
+	// for (var i = 0; i < this.aBtn.length; i++) {
+	// 	this.aBtn[i].className='';
+	// 	this.aDiv[i].style.display='none';
+	// }
+	this.aBtn[this.showIndex].className='active';
+	this.aDiv[this.showIndex].style.display='block';
+
+}
+
+Tab.prototype.tabShowDiv=function(){//切换this.showIndex
+	//改变this.index
+	for (var i = 0; i < this.aBtn.length; i++) {
+		this.aBtn[i].className='';
+		this.aDiv[i].style.display='none';
+	}
+	this.aBtn[this.showIndex].className='active';
+	this.aDiv[this.showIndex].style.display='block';
+
+}
+
+Tab.prototype.getContent=function(){
+	var getBtn=document.getElementById('getContent');
+	var showContent=document.getElementById('showContent');
+	var That=this;
+	getBtn.onclick=function(){
+		setInterval(function(){
+			//console.log(That.settings);//每隔200ms刷新一次当前的eachShowIndex值
+			showContent.innerHTML='当前被激活的索引值是'+That.settings.eachShowIndex;
+		},200);
+	}
+}
+
+//公共函数
+function extending(obj1,obj2){
+	for (var attr in obj2) {
+		obj1[attr]=obj2[attr];
+	}
+}
+
+//绑定事件
+function bindEvent(obj,events,fn){
+	obj.listeners=obj.listeners||{};
+	obj.listeners[events]=obj.listeners[events]||[];
+
+	obj.listeners[events].push(fn);
+
+	//绑定常规事件
+	if (!!obj.nodeType) {
+		obj.addEventListener?obj.addEventListener(events,fn,false):obj.attachEvent('on'+events,fn);
+	}
+
+}
+function fireEvent(obj,events){
+	if (obj.listeners&&obj.listeners[events]) {
+		for (var i = 0; i < obj.listeners[events].length; i++) {
+			obj.listeners[events][i]();
+		}		
+	}
+	//console.log(obj.listeners[events][0]);
+}
+</script>
+<body>
+	<div id='div1'>
+		<input type="button" value='1'>
+		<input type="button" value='2'>
+		<input type="button" value='3'>
+		<div>111</div>
+		<div>222</div>
+		<div>333</div>
+	</div>
+	<hr>
+
+	<div id='div2'>
+		<input class='active' type="button" value='1'>
+		<input type="button" value='2'>
+		<input type="button" value='3'>
+		<div>111</div>
+		<div>222</div>
+		<div>333</div>
+	</div>
+	<hr>	
+
+	<div id='div3'>
+		<input class='active' type="button" value='1'>
+		<input type="button" value='2'>
+		<input type="button" value='3'>
+		<div>111</div>
+		<div>222</div>
+		<div>333</div>
+	</div>
+	<hr>
+
+	<div id='div4'>
+		<input class='active' type="button" value='1'>
+		<input type="button" value='2'>
+		<input type="button" value='3'>
+		<div>111</div>
+		<div>222</div>
+		<div>333</div>
+		<button id='getContent'>点击适时刷新当前的内容</button>
+		<p id='showContent'>暂未显示</p>
+	</div>	
+</body>
+</html>
